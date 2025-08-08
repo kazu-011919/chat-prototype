@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>製造2課チャット（試作版）</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+  <h1>製造2課チャット（試作版）</h1>
+  <div id="user-info"></div>
+</header>
+
+<main>
+  <section id="login-section" class="card">
+    <h2>ログイン</h2>
+    <label>氏名（選択または入力）</label>
+    <select id="user-select"></select>
+    <input id="name-input" placeholder="新しい氏名を入力する場合はこちら">
+    <label>パスワード</label>
+    <input id="password-input" type="password" placeholder="数字のみでも可">
+    <button id="login-btn">ログイン</button>
+    <p class="muted">初期ユーザー：山田利至(管理者), 倉田健太(機長), 安藤正樹(係長), 小林茂光(班長)</p>
+  </section>
+
+  <section id="app-section" class="hidden">
+    <aside class="sidebar card">
+      <div class="panel">
+        <h3>グループ</h3>
+        <button class="group-btn" data-group="general">一般（全員）</button>
+        <button class="group-btn" data-group="kacho">係長</button>
+        <button class="group-btn" data-group="kicho">機長・班長</button>
+      </div>
+      <div class="panel">
+        <h3>カレンダー</h3>
+        <ul id="calendar-list"></ul>
+      </div>
+      <div class="panel" id="admin-panel" style="display:none;">
+        <h3>管理者メニュー</h3>
+        <button id="open-user-mgmt">ユーザー管理</button>
+      </div>
+      <div class="panel">
+        <h3>ログアウト</h3>
+        <button id="logout-btn">ログアウト</button>
+      </div>
+    </aside>
+
+    <section class="main-area card">
+      <div id="chat-header">
+        <h2 id="chat-title">一般</h2>
+        <div id="chat-role-badge"></div>
+      </div>
+
+      <div id="messages" class="messages"></div>
+
+      <div id="compose" class="compose">
+        <select id="target-select">
+          <option value="general">一般 (全員)</option>
+          <option value="kacho">係長</option>
+          <option value="kicho">機長・班長</option>
+        </select>
+        <input id="message-input" placeholder="メッセージを入力"/>
+        <input id="file-input" type="file" accept=".pdf,image/*"/>
+        <button id="send-btn">送信</button>
+      </div>
+    </section>
+
+    <aside class="rightbar card" id="rightbar">
+      <h3>情報</h3>
+      <div id="user-list"></div>
+    </aside>
+  </section>
+
+  <section id="user-mgmt-modal" class="modal hidden card">
+    <h2>ユーザー管理（管理者）</h2>
+    <div>
+      <input id="mgmt-name" placeholder="氏名">
+      <select id="mgmt-role">
+        <option value="general">一般</option>
+        <option value="kacho">係長</option>
+        <option value="kicho">機長・班長</option>
+        <option value="bancho">班長</option>
+        <option value="admin">管理者</option>
+      </select>
+      <input id="mgmt-pass" placeholder="初期パスワード(4-12文字)">
+      <button id="mgmt-add">追加</button>
+    </div>
+    <div id="mgmt-list"></div>
+    <button id="mgmt-close">閉じる</button>
+  </section>
+
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>
