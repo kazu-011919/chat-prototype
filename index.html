@@ -2,137 +2,162 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>生産部製造2課 チャット</title>
 <style>
-body { font-family: sans-serif; margin: 0; padding: 0; }
-header { background: #333; color: #fff; padding: 10px; text-align: center; }
-main { padding: 10px; }
-input, select, button { margin: 5px 0; padding: 5px; }
-.message { border-bottom: 1px solid #ccc; padding: 5px 0; }
-.admin-menu { background: #f0f0f0; padding: 10px; margin: 10px 0; }
+  body { font-family: Arial, sans-serif; }
+  .hidden { display: none; }
+  #chat-box { border: 1px solid #ccc; height: 300px; overflow-y: scroll; padding: 5px; }
+  .admin-menu { margin-top: 10px; border: 1px solid #ccc; padding: 5px; }
+  table { border-collapse: collapse; width: 100%; }
+  th, td { border: 1px solid #ccc; padding: 5px; }
 </style>
 </head>
 <body>
 
-<header>
-  <h1>生産部製造2課 チャット</h1>
-</header>
+<h2>生産部製造2課 チャット</h2>
 
-<main id="app">
-  <div id="login">
-    <h2>ログイン</h2>
-    <input type="text" id="username" placeholder="名前"><br>
-    <input type="password" id="password" placeholder="パスワード（数字のみ可）"><br>
-    <button onclick="login()">ログイン</button>
-  </div>
+<div id="login-screen">
+  <select id="username">
+    <option value="">名前を選択</option>
+  </select><br>
+  <input type="password" id="password" placeholder="パスワード"><br>
+  <button onclick="login()">ログイン</button>
+</div>
 
-  <div id="chat" style="display:none;">
-    <p>ログイン中: <span id="currentUser"></span>（<span id="currentRole"></span>）</p>
-    <div id="messages"></div>
-    <textarea id="newMessage" placeholder="メッセージを入力"></textarea><br>
-    <button onclick="sendMessage()">送信</button>
-    <div id="adminPanel" style="display:none;">
-      <h3>管理者メニュー</h3>
-      <div id="userList"></div>
-    </div>
-    <button onclick="logout()">ログアウト</button>
+<div id="chat-screen" class="hidden">
+  <p>ログイン中: <span id="current-user"></span>（<span id="current-role"></span>）</p>
+  <div id="chat-box"></div>
+  <select id="send-to">
+    <option value="general">一般（全員）</option>
+    <option value="kakaricho">係長</option>
+    <option value="kicho-hancho">機長・班長</option>
+  </select><br>
+  <input type="text" id="message" placeholder="メッセージ"><br>
+  <button onclick="sendMessage()">送信</button>
+
+  <div id="admin-button" class="hidden">
+    <button onclick="showAdminMenu()">管理者メニュー</button>
   </div>
-</main>
+</div>
+
+<div id="admin-menu" class="hidden admin-menu">
+  <h3>管理者メニュー</h3>
+  <table>
+    <tr><th>名前</th><th>職制</th><th>パスワード</th><th>操作</th></tr>
+    <tbody id="user-list"></tbody>
+  </table>
+  <button onclick="closeAdminMenu()">閉じる</button>
+</div>
 
 <script>
+// 職制順：管理者(0) → 係長(1) → 機長班長(2) → 一般(3)
+const roleHierarchy = { "管理者": 0, "係長": 1, "機長班長": 2, "一般": 3 };
+
 // ユーザー初期データ
 let users = [
-  { name: "山田利至", role: "管理者", password: "1111" },
-  { name: "安藤正樹", role: "係長", password: "2222" },
-  { name: "倉田健太", role: "機長班長", password: "3333" },
-  { name: "小林茂光", role: "機長班長", password: "4444" },
-  { name: "山田太郎", role: "一般", password: "5555" },
-  { name: "佐藤花子", role: "係長", password: "6666" },
-  { name: "高橋次郎", role: "機長班長", password: "7777" }
+  { name: "山田利至", role: "管理者", password: "1234" },
+  { name: "倉田健太", role: "機長班長", password: "1234" },
+  { name: "安藤正樹", role: "係長", password: "1234" },
+  { name: "小林茂光", role: "機長班長", password: "1234" },
+  { name: "山田太郎", role: "一般", password: "1234" },
+  { name: "佐藤花子", role: "係長", password: "1234" },
+  { name: "高橋次郎", role: "機長班長", password: "1234" }
 ];
 
-// 職制ランク（数値が大きいほど上位）
-const roleRank = { "一般": 1, "機長班長": 2, "係長": 3, "管理者": 4 };
-
-let messages = [];
 let currentUser = null;
+let messages = [];
 
-// ログイン処理
+// 名前プルダウン生成
+window.onload = function() {
+  const select = document.getElementById("username");
+  users.forEach(u => {
+    const opt = document.createElement("option");
+    opt.value = u.name;
+    opt.textContent = u.name;
+    select.appendChild(opt);
+  });
+};
+
 function login() {
-  const name = document.getElementById("username").value.trim();
-  const pass = document.getElementById("password").value.trim();
+  const name = document.getElementById("username").value;
+  const pass = document.getElementById("password").value;
   const user = users.find(u => u.name === name && u.password === pass);
   if (user) {
     currentUser = user;
-    document.getElementById("currentUser").textContent = user.name;
-    document.getElementById("currentRole").textContent = user.role;
-    document.getElementById("login").style.display = "none";
-    document.getElementById("chat").style.display = "block";
-    renderMessages();
+    document.getElementById("current-user").textContent = user.name;
+    document.getElementById("current-role").textContent = user.role;
+    document.getElementById("login-screen").classList.add("hidden");
+    document.getElementById("chat-screen").classList.remove("hidden");
     if (user.role === "管理者") {
-      document.getElementById("adminPanel").style.display = "block";
-      renderUserList();
+      document.getElementById("admin-button").classList.remove("hidden");
     }
+    renderMessages();
   } else {
     alert("名前またはパスワードが間違っています");
   }
 }
 
-// ログアウト
-function logout() {
-  currentUser = null;
-  document.getElementById("login").style.display = "block";
-  document.getElementById("chat").style.display = "none";
+function canViewMessage(msg) {
+  return roleHierarchy[currentUser.role] <= roleHierarchy[msg.targetRole];
 }
 
-// メッセージ送信
 function sendMessage() {
-  const text = document.getElementById("newMessage").value.trim();
+  const text = document.getElementById("message").value;
+  const target = document.getElementById("send-to").value;
   if (!text) return;
-  messages.push({ user: currentUser.name, role: currentUser.role, text });
-  document.getElementById("newMessage").value = "";
+
+  let targetRole;
+  if (target === "general") targetRole = "一般";
+  else if (target === "kakaricho") targetRole = "係長";
+  else targetRole = "機長班長";
+
+  messages.push({ sender: currentUser.name, targetRole, text });
+  document.getElementById("message").value = "";
   renderMessages();
 }
 
-// メッセージ表示（アクセス制限あり）
 function renderMessages() {
-  const msgDiv = document.getElementById("messages");
-  msgDiv.innerHTML = "";
-  const myRank = roleRank[currentUser.role];
-  messages
-    .filter(m => roleRank[m.role] <= myRank)
-    .forEach(m => {
+  const box = document.getElementById("chat-box");
+  box.innerHTML = "";
+  messages.forEach(msg => {
+    if (canViewMessage(msg)) {
       const div = document.createElement("div");
-      div.className = "message";
-      div.innerHTML = `<strong>${m.user} (${m.role})</strong>: ${m.text}`;
-      msgDiv.appendChild(div);
-    });
-}
-
-// 管理者用ユーザー一覧＆パスワード編集
-function renderUserList() {
-  const listDiv = document.getElementById("userList");
-  listDiv.innerHTML = "";
-  users.forEach((u, idx) => {
-    const div = document.createElement("div");
-    div.className = "admin-menu";
-    div.innerHTML = `
-      <strong>${u.name}</strong>（${u.role}）<br>
-      パスワード: <input type="text" value="${u.password}" id="pw_${idx}">
-      <button onclick="updatePassword(${idx})">変更</button>
-    `;
-    listDiv.appendChild(div);
+      div.textContent = `[${msg.sender} → ${msg.targetRole}] ${msg.text}`;
+      box.appendChild(div);
+    }
   });
 }
 
-function updatePassword(idx) {
-  const newPw = document.getElementById(`pw_${idx}`).value.trim();
-  if (!newPw) return alert("パスワードを入力してください");
-  users[idx].password = newPw;
-  alert("パスワードを更新しました");
+function showAdminMenu() {
+  const list = document.getElementById("user-list");
+  list.innerHTML = "";
+  users.forEach((u, idx) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${u.name}</td>
+      <td>${u.role}</td>
+      <td><input type="text" value="${u.password}" onchange="updatePassword(${idx}, this.value)"></td>
+      <td><button onclick="deleteUser(${idx})">削除</button></td>
+    `;
+    list.appendChild(tr);
+  });
+  document.getElementById("admin-menu").classList.remove("hidden");
 }
 
+function closeAdminMenu() {
+  document.getElementById("admin-menu").classList.add("hidden");
+}
+
+function updatePassword(index, newPass) {
+  users[index].password = newPass;
+}
+
+function deleteUser(index) {
+  if (confirm("削除しますか？")) {
+    users.splice(index, 1);
+    showAdminMenu();
+  }
+}
 </script>
 </body>
 </html>
