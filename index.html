@@ -1,97 +1,138 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>製造2課チャット（試作版）</title>
-<link rel="stylesheet" href="styles.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>生産部製造2課 チャット</title>
+<style>
+body { font-family: sans-serif; margin: 0; padding: 0; }
+header { background: #333; color: #fff; padding: 10px; text-align: center; }
+main { padding: 10px; }
+input, select, button { margin: 5px 0; padding: 5px; }
+.message { border-bottom: 1px solid #ccc; padding: 5px 0; }
+.admin-menu { background: #f0f0f0; padding: 10px; margin: 10px 0; }
+</style>
 </head>
 <body>
+
 <header>
-  <h1>製造2課チャット（試作版）</h1>
-  <div id="user-info"></div>
+  <h1>生産部製造2課 チャット</h1>
 </header>
 
-<main>
-  <section id="login-section" class="card">
+<main id="app">
+  <div id="login">
     <h2>ログイン</h2>
-    <label>氏名（選択または入力）</label>
-    <select id="user-select"></select>
-    <input id="name-input" placeholder="新しい氏名を入力する場合はこちら">
-    <label>パスワード</label>
-    <input id="password-input" type="password" placeholder="数字のみでも可">
-    <button id="login-btn">ログイン</button>
-    <p class="muted">初期ユーザー：山田利至(管理者), 倉田健太(機長), 安藤正樹(係長), 小林茂光(班長)</p>
-  </section>
+    <input type="text" id="username" placeholder="名前"><br>
+    <input type="password" id="password" placeholder="パスワード（数字のみ可）"><br>
+    <button onclick="login()">ログイン</button>
+  </div>
 
-  <section id="app-section" class="hidden">
-    <aside class="sidebar card">
-      <div class="panel">
-        <h3>グループ</h3>
-        <button class="group-btn" data-group="general">一般（全員）</button>
-        <button class="group-btn" data-group="kacho">係長</button>
-        <button class="group-btn" data-group="kicho">機長・班長</button>
-      </div>
-      <div class="panel">
-        <h3>カレンダー</h3>
-        <ul id="calendar-list"></ul>
-      </div>
-      <div class="panel" id="admin-panel" style="display:none;">
-        <h3>管理者メニュー</h3>
-        <button id="open-user-mgmt">ユーザー管理</button>
-      </div>
-      <div class="panel">
-        <h3>ログアウト</h3>
-        <button id="logout-btn">ログアウト</button>
-      </div>
-    </aside>
-
-    <section class="main-area card">
-      <div id="chat-header">
-        <h2 id="chat-title">一般</h2>
-        <div id="chat-role-badge"></div>
-      </div>
-
-      <div id="messages" class="messages"></div>
-
-      <div id="compose" class="compose">
-        <select id="target-select">
-          <option value="general">一般 (全員)</option>
-          <option value="kacho">係長</option>
-          <option value="kicho">機長・班長</option>
-        </select>
-        <input id="message-input" placeholder="メッセージを入力"/>
-        <input id="file-input" type="file" accept=".pdf,image/*"/>
-        <button id="send-btn">送信</button>
-      </div>
-    </section>
-
-    <aside class="rightbar card" id="rightbar">
-      <h3>情報</h3>
-      <div id="user-list"></div>
-    </aside>
-  </section>
-
-  <section id="user-mgmt-modal" class="modal hidden card">
-    <h2>ユーザー管理（管理者）</h2>
-    <div>
-      <input id="mgmt-name" placeholder="氏名">
-      <select id="mgmt-role">
-        <option value="general">一般</option>
-        <option value="kacho">係長</option>
-        <option value="kicho">機長・班長</option>
-        <option value="bancho">班長</option>
-        <option value="admin">管理者</option>
-      </select>
-      <input id="mgmt-pass" placeholder="初期パスワード(4-12文字)">
-      <button id="mgmt-add">追加</button>
+  <div id="chat" style="display:none;">
+    <p>ログイン中: <span id="currentUser"></span>（<span id="currentRole"></span>）</p>
+    <div id="messages"></div>
+    <textarea id="newMessage" placeholder="メッセージを入力"></textarea><br>
+    <button onclick="sendMessage()">送信</button>
+    <div id="adminPanel" style="display:none;">
+      <h3>管理者メニュー</h3>
+      <div id="userList"></div>
     </div>
-    <div id="mgmt-list"></div>
-    <button id="mgmt-close">閉じる</button>
-  </section>
-
+    <button onclick="logout()">ログアウト</button>
+  </div>
 </main>
 
-<script src="app.js"></script>
+<script>
+// ユーザー初期データ
+let users = [
+  { name: "山田利至", role: "管理者", password: "1111" },
+  { name: "安藤正樹", role: "係長", password: "2222" },
+  { name: "倉田健太", role: "機長班長", password: "3333" },
+  { name: "小林茂光", role: "機長班長", password: "4444" },
+  { name: "山田太郎", role: "一般", password: "5555" },
+  { name: "佐藤花子", role: "係長", password: "6666" },
+  { name: "高橋次郎", role: "機長班長", password: "7777" }
+];
+
+// 職制ランク（数値が大きいほど上位）
+const roleRank = { "一般": 1, "機長班長": 2, "係長": 3, "管理者": 4 };
+
+let messages = [];
+let currentUser = null;
+
+// ログイン処理
+function login() {
+  const name = document.getElementById("username").value.trim();
+  const pass = document.getElementById("password").value.trim();
+  const user = users.find(u => u.name === name && u.password === pass);
+  if (user) {
+    currentUser = user;
+    document.getElementById("currentUser").textContent = user.name;
+    document.getElementById("currentRole").textContent = user.role;
+    document.getElementById("login").style.display = "none";
+    document.getElementById("chat").style.display = "block";
+    renderMessages();
+    if (user.role === "管理者") {
+      document.getElementById("adminPanel").style.display = "block";
+      renderUserList();
+    }
+  } else {
+    alert("名前またはパスワードが間違っています");
+  }
+}
+
+// ログアウト
+function logout() {
+  currentUser = null;
+  document.getElementById("login").style.display = "block";
+  document.getElementById("chat").style.display = "none";
+}
+
+// メッセージ送信
+function sendMessage() {
+  const text = document.getElementById("newMessage").value.trim();
+  if (!text) return;
+  messages.push({ user: currentUser.name, role: currentUser.role, text });
+  document.getElementById("newMessage").value = "";
+  renderMessages();
+}
+
+// メッセージ表示（アクセス制限あり）
+function renderMessages() {
+  const msgDiv = document.getElementById("messages");
+  msgDiv.innerHTML = "";
+  const myRank = roleRank[currentUser.role];
+  messages
+    .filter(m => roleRank[m.role] <= myRank)
+    .forEach(m => {
+      const div = document.createElement("div");
+      div.className = "message";
+      div.innerHTML = `<strong>${m.user} (${m.role})</strong>: ${m.text}`;
+      msgDiv.appendChild(div);
+    });
+}
+
+// 管理者用ユーザー一覧＆パスワード編集
+function renderUserList() {
+  const listDiv = document.getElementById("userList");
+  listDiv.innerHTML = "";
+  users.forEach((u, idx) => {
+    const div = document.createElement("div");
+    div.className = "admin-menu";
+    div.innerHTML = `
+      <strong>${u.name}</strong>（${u.role}）<br>
+      パスワード: <input type="text" value="${u.password}" id="pw_${idx}">
+      <button onclick="updatePassword(${idx})">変更</button>
+    `;
+    listDiv.appendChild(div);
+  });
+}
+
+function updatePassword(idx) {
+  const newPw = document.getElementById(`pw_${idx}`).value.trim();
+  if (!newPw) return alert("パスワードを入力してください");
+  users[idx].password = newPw;
+  alert("パスワードを更新しました");
+}
+
+</script>
 </body>
 </html>
