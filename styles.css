@@ -1,28 +1,45 @@
-body{font-family: Arial, Helvetica, sans-serif; margin:0; background:#f4f6f8; color:#222}
-header{background:#0b63c5;color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center}
-h1{margin:0;font-size:18px}
-main{display:flex;gap:12px;padding:12px}
-.card{background:#fff;border-radius:8px;padding:12px;box-shadow:0 1px 3px rgba(0,0,0,0.06)}
-.sidebar{width:200px}
-.rightbar{width:200px}
-.main-area{flex:1;display:flex;flex-direction:column}
-.hidden{display:none}
-.messages{height:400px;overflow:auto;border:1px solid #eee;padding:8px;border-radius:6px;background:#fafafa}
-.message{margin-bottom:8px;padding:6px;border-radius:6px}
-.msg-meta{font-size:12px;color:#666;margin-bottom:4px}
-.msg-text{white-space:pre-wrap}
-.compose{display:flex;gap:8px;margin-top:8px}
-.compose input[type="text"]{flex:1;padding:8px}
-.group-btn{display:block;width:100%;margin-bottom:6px;padding:8px;border:none;background:#e9f2ff;border-radius:6px}
-.panel h3{margin:6px 0}
-#chat-header{display:flex;justify-content:space-between;align-items:center}
-.badge{display:inline-block;padding:2px 6px;border-radius:6px;color:#fff;font-size:12px}
-.badge.general{background:#007bff}
-.badge.kacho{background:#28a745}
-.badge.kicho{background:#dc3545}
-.badge.bancho{background:#ff7f00}
-.badge.admin{background:#6f42c1}
-.modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:999;width:90%;max-width:700px}
-#user-list p{margin:6px 0}
-button{cursor:pointer}
-.muted{color:#666;font-size:12px}
+body {
+    font-family: sans-serif;
+    max-width: 600px;
+    margin: auto;
+    padding: 20px;
+}
+
+h1 {
+    text-align: center;
+}
+
+label {
+    display: block;
+    margin-top: 10px;
+}
+
+select, input {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+}
+
+button {
+    margin-top: 10px;
+    padding: 10px;
+    width: 100%;
+}
+
+#chat-area {
+    border: 1px solid #ccc;
+    height: 300px;
+    overflow-y: scroll;
+    padding: 10px;
+    margin-top: 10px;
+}
+
+#message-area {
+    display: flex;
+    gap: 5px;
+    margin-top: 10px;
+}
+
+#message-area input {
+    flex: 1;
+}
