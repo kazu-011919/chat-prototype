@@ -2,104 +2,97 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>生産部製造2課 チャット</title>
+<title>職制別チャット</title>
 <style>
-body { font-family: sans-serif; margin: 0; padding: 0; }
-header { background: #2c3e50; color: white; padding: 10px; }
-main { padding: 10px; }
-select, input, button { margin: 5px; padding: 5px; }
-#chat { border: 1px solid #ccc; height: 300px; overflow-y: scroll; padding: 5px; }
-.message { border-bottom: 1px solid #ddd; padding: 3px; }
-.system { color: gray; font-size: 0.9em; }
+body { font-family: sans-serif; }
+#chatScreen, #adminMenu { display:none; }
+#messages { border:1px solid #ccc; height:200px; overflow-y:auto; padding:5px; margin-bottom:10px;}
+.msg { border-bottom:1px solid #eee; padding:3px; }
+.role { font-size:0.8em; color:#666; }
 </style>
 </head>
 <body>
 
-<header>
-<h2>生産部製造2課 チャット</h2>
-</header>
-
-<main id="loginScreen">
+<!-- ログイン画面 -->
+<div id="loginScreen">
 <h3>ログイン</h3>
-<label>名前:
-<select id="loginName"></select>
-</label><br>
-<label>パスワード:
-<input type="password" id="loginPass">
-</label><br>
+名前: <input id="loginName"><br>
+パスワード: <input type="password" id="loginPass"><br>
 <button onclick="login()">ログイン</button>
-</main>
+</div>
 
-<main id="chatScreen" style="display:none;">
-<div>
-<strong>ログイン中:</strong> <span id="currentUser"></span>
-<button onclick="logout()">ログアウト</button>
-</div>
-<hr>
-<div id="adminMenu" style="display:none;">
-<h4>管理者メニュー</h4>
-<button onclick="showUserList()">ユーザー一覧</button>
-<div id="userListArea"></div>
-</div>
-<hr>
-<select id="targetGroup">
-<option value="一般">一般（全員）</option>
-<option value="係長">係長以上</option>
-<option value="機長班長">機長/班長以上</option>
-<option value="管理者">管理者のみ</option>
-</select>
-<br>
-<textarea id="messageInput" rows="3" cols="40"></textarea><br>
+<!-- チャット画面 -->
+<div id="chatScreen">
+<h3>ようこそ <span id="currentUser"></span> さん</h3>
+<div id="messages"></div>
+<input id="msgInput" placeholder="メッセージ">
 <button onclick="sendMessage()">送信</button>
-<hr>
-<div id="chat"></div>
-</main>
+<button onclick="logout()">ログアウト</button>
+
+<!-- 自分のパスワード変更 -->
+<div style="margin-top:10px;">
+<h4>パスワード変更（自分のみ）</h4>
+<input type="password" id="newPass">
+<button onclick="changeMyPass()">変更</button>
+</div>
+
+<!-- 管理者メニュー -->
+<div id="adminMenu" style="margin-top:20px; border-top:1px solid #ccc; padding-top:10px;">
+<h4>ユーザー管理（管理者専用）</h4>
+<table border="1" cellpadding="3">
+<tr><th>名前</th><th>職制</th><th>パスワード</th><th>操作</th></tr>
+<tbody id="userTable"></tbody>
+</table>
+<h5>新規ユーザー追加</h5>
+名前: <input id="newName">
+職制: 
+<select id="newRole">
+<option>管理者</option>
+<option>係長</option>
+<option>機長班長</option>
+<option>一般</option>
+</select>
+パスワード: <input id="newUserPass">
+<button onclick="addUser()">追加</button>
+</div>
+</div>
 
 <script>
 let users = [
-  {name:"山田利至", pass:"1234", role:"管理者"},
-  {name:"倉田健太", pass:"1234", role:"機長班長"},
-  {name:"安藤正樹", pass:"1234", role:"係長"},
-  {name:"小林茂光", pass:"1234", role:"機長班長"},
-  {name:"佐藤花子", pass:"1234", role:"係長"},
-  {name:"高橋次郎", pass:"1234", role:"機長班長"},
-  {name:"山田太郎", pass:"1234", role:"一般"}
+  {name:"山田利至", role:"管理者", pass:"1234"},
+  {name:"倉田健太", role:"機長班長", pass:"1234"},
+  {name:"安藤正樹", role:"係長", pass:"1234"},
+  {name:"小林茂光", role:"機長班長", pass:"1234"}
 ];
 
 let messages = [];
 let currentUser = null;
 
 const roleRank = {
-  "管理者":4,
-  "係長":3,
-  "機長班長":2,
-  "一般":1
+  "管理者": 4,
+  "係長": 3,
+  "機長班長": 2,
+  "一般": 1
 };
 
-function populateLoginNames(){
-  let sel = document.getElementById("loginName");
-  sel.innerHTML = "";
-  users.forEach(u=>{
-    let opt = document.createElement("option");
-    opt.value = u.name;
-    opt.textContent = u.name;
-    sel.appendChild(opt);
-  });
-}
-populateLoginNames();
-
 function login(){
-  let name = document.getElementById("loginName").value;
-  let pass = document.getElementById("loginPass").value;
+  let name = document.getElementById("loginName").value.trim();
+  let pass = document.getElementById("loginPass").value.trim();
   let user = users.find(u=>u.name===name && u.pass===pass);
   if(user){
     currentUser = user;
     document.getElementById("loginScreen").style.display="none";
     document.getElementById("chatScreen").style.display="block";
     document.getElementById("currentUser").textContent = `${user.name}（${user.role}）`;
+
+    // 管理者のみ管理メニュー表示
     if(user.role==="管理者"){
       document.getElementById("adminMenu").style.display="block";
+      refreshUserTable();
+    } else {
+      document.getElementById("adminMenu").style.display="none";
     }
+
     showMessages();
   } else {
     alert("名前またはパスワードが違います");
@@ -110,62 +103,83 @@ function logout(){
   currentUser = null;
   document.getElementById("loginScreen").style.display="block";
   document.getElementById("chatScreen").style.display="none";
+  document.getElementById("loginName").value="";
   document.getElementById("loginPass").value="";
 }
 
 function sendMessage(){
-  let text = document.getElementById("messageInput").value.trim();
+  let text = document.getElementById("msgInput").value.trim();
   if(!text) return;
-  let target = document.getElementById("targetGroup").value;
-  messages.push({from:currentUser.name, role:currentUser.role, target:target, text:text, time:new Date().toLocaleString()});
-  document.getElementById("messageInput").value="";
+  messages.push({name:currentUser.name, role:currentUser.role, text});
+  document.getElementById("msgInput").value="";
   showMessages();
 }
 
-function canViewMessage(msg){
-  // 受信者の役職ランク >= メッセージ対象ランク
-  return roleRank[currentUser.role] >= roleRank[msg.target];
-}
-
 function showMessages(){
-  let chat = document.getElementById("chat");
-  chat.innerHTML = "";
+  let div = document.getElementById("messages");
+  div.innerHTML="";
   messages.forEach(m=>{
-    if(canViewMessage(m)){
-      let div = document.createElement("div");
-      div.className = "message";
-      div.innerHTML = `<strong>${m.from}(${m.role}) → ${m.target}</strong> : ${m.text} <span class="system">[${m.time}]</span>`;
-      chat.appendChild(div);
+    // 自分の職制順位以上のみ表示
+    if(roleRank[currentUser.role] >= roleRank[m.role]){
+      let el = document.createElement("div");
+      el.className="msg";
+      el.innerHTML = `<b>${m.name}</b> <span class="role">(${m.role})</span>: ${m.text}`;
+      div.appendChild(el);
     }
   });
+  div.scrollTop = div.scrollHeight;
 }
 
-function showUserList(){
-  let area = document.getElementById("userListArea");
-  area.innerHTML = "";
-  users.forEach((u,idx)=>{
-    let div = document.createElement("div");
-    div.innerHTML = `
-      ${u.name} (${u.role}) 
-      パス:<input type="text" value="${u.pass}" onchange="updatePass(${idx}, this.value)">
-      役職:
-      <select onchange="updateRole(${idx}, this.value)">
-        <option value="管理者" ${u.role==="管理者"?"selected":""}>管理者</option>
-        <option value="係長" ${u.role==="係長"?"selected":""}>係長</option>
-        <option value="機長班長" ${u.role==="機長班長"?"selected":""}>機長/班長</option>
-        <option value="一般" ${u.role==="一般"?"selected":""}>一般</option>
-      </select>
-    `;
-    area.appendChild(div);
+function changeMyPass(){
+  let newP = document.getElementById("newPass").value.trim();
+  if(!newP) { alert("パスワードを入力してください"); return; }
+  currentUser.pass = newP;
+  alert("パスワードを変更しました");
+  document.getElementById("newPass").value="";
+}
+
+function refreshUserTable(){
+  let tbody = document.getElementById("userTable");
+  tbody.innerHTML="";
+  users.forEach((u,i)=>{
+    let tr = document.createElement("tr");
+    tr.innerHTML = `<td>${u.name}</td>
+      <td><select onchange="changeRole(${i}, this.value)">
+        <option ${u.role==="管理者"?"selected":""}>管理者</option>
+        <option ${u.role==="係長"?"selected":""}>係長</option>
+        <option ${u.role==="機長班長"?"selected":""}>機長班長</option>
+        <option ${u.role==="一般"?"selected":""}>一般</option>
+      </select></td>
+      <td><input type="text" value="${u.pass}" onchange="changePass(${i}, this.value)"></td>
+      <td><button onclick="deleteUser(${i})">削除</button></td>`;
+    tbody.appendChild(tr);
   });
 }
 
-function updatePass(index, newPass){
-  users[index].pass = newPass;
+function changeRole(i, val){
+  users[i].role = val;
 }
 
-function updateRole(index, newRole){
-  users[index].role = newRole;
+function changePass(i, val){
+  users[i].pass = val;
+}
+
+function deleteUser(i){
+  if(confirm("削除しますか？")){
+    users.splice(i,1);
+    refreshUserTable();
+  }
+}
+
+function addUser(){
+  let name = document.getElementById("newName").value.trim();
+  let role = document.getElementById("newRole").value;
+  let pass = document.getElementById("newUserPass").value.trim();
+  if(!name || !pass) { alert("名前とパスワードを入力してください"); return; }
+  users.push({name, role, pass});
+  document.getElementById("newName").value="";
+  document.getElementById("newUserPass").value="";
+  refreshUserTable();
 }
 </script>
 
