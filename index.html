@@ -1,435 +1,56 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>製造2課チャット（最新版・初期パス1234）</title>
-<style>
-  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;margin:0;background:#f4f6f8;color:#222}
-  header{background:#0b63c5;color:#fff;padding:12px 16px}
-  main{padding:12px;display:flex;gap:12px;flex-wrap:wrap}
-  .card{background:#fff;border-radius:8px;padding:12px;box-shadow:0 1px 4px rgba(0,0,0,0.06)}
-  #left{width:320px;min-width:260px}
-  #center{flex:1;min-width:300px}
-  #right{width:320px;min-width:260px}
-  select,input,textarea,button{width:100%;box-sizing:border-box;padding:8px;margin:6px 0;border:1px solid #ddd;border-radius:6px}
-  button{background:#0b63c5;color:#fff;border:none}
-  .muted{color:#666;font-size:13px}
-  .messages{height:420px;overflow:auto;padding:8px;border-radius:6px;border:1px solid #eee;background:#fafafa}
-  .msg{padding:8px;border-radius:8px;margin-bottom:8px;border:1px solid #eee;background:#fff}
-  .meta{font-size:12px;color:#666;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
-  .badge{display:inline-block;padding:2px 6px;border-radius:6px;color:#fff;font-size:12px}
-  .badge.admin{background:#6f42c1}
-  .badge.kacho{background:#28a745}
-  .badge.kicho{background:#dc3545}
-  .badge.general{background:#007bff}
-  .small{font-size:12px;color:#555}
-  .admin-table{width:100%;border-collapse:collapse}
-  .admin-table th,.admin-table td{border:1px solid #eee;padding:6px}
-  .link-btn{background:#fff;color:#0b63c5;border:1px solid #0b63c5;padding:6px;border-radius:6px}
-  a.file-link{color:#0b63c5;text-decoration:none;display:block;margin-top:6px}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>職制チャット</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<header><h1>製造2課チャット — 試作（初期パス 1234）</h1></header>
+    <div id="login-container">
+        <h2>ログイン</h2>
+        <label>名前:</label>
+        <select id="username"></select>
 
-<main>
-  <!-- 左：ログイン / カレンダー -->
-  <section id="left" class="card">
-    <h3>ログイン</h3>
-    <label>職制</label>
-    <select id="role-select"><option value="">-- 選択 --</option></select>
+        <label>パスワード:</label>
+        <input type="password" id="password" placeholder="数字のみOK">
 
-    <label>氏名</label>
-    <select id="name-select" disabled><option>職制を選んでください</option></select>
-
-    <label>パスワード</label>
-    <input id="login-pass" type="password" placeholder="パスワード（数字のみも可）" />
-
-    <button id="login-btn">ログイン</button>
-    <div id="login-info" class="muted">管理者：山田利至 / 係長：安藤正樹 / 機長班長：小林茂光 / 一般：倉田健太</div>
-
-    <hr />
-    <h3>カレンダー</h3>
-    <ul id="calendar-list" class="muted"></ul>
-
-    <div id="cal-admin" style="display:none">
-      <h4>予定追加（管理者）</h4>
-      <input id="cal-title" placeholder="タイトル" />
-      <input id="cal-until" placeholder="期限 (YYYY-MM-DD)" />
-      <button id="cal-add" class="link-btn">追加</button>
-    </div>
-  </section>
-
-  <!-- 中央：チャット -->
-  <section id="center" class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center">
-      <div id="logged-info" class="small">未ログイン</div>
-      <div id="logout-wrap" style="display:none">
-        <button id="logout-btn" class="link-btn">ログアウト</button>
-      </div>
+        <button id="login-btn">ログイン</button>
     </div>
 
-    <hr />
-    <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
-      <label style="width:40%">配信先</label>
-      <select id="target-select" style="width:60%">
-        <option value="general">一般（全員）</option>
-        <option value="kacho">係長</option>
-        <option value="kicho">機長班長</option>
-      </select>
+    <div id="chat-container" style="display:none;">
+        <div id="top-bar">
+            <span id="user-info"></span>
+            <button id="logout-btn">ログアウト</button>
+        </div>
+
+        <div id="message-list"></div>
+
+        <div id="announcement"></div>
+
+        <div id="message-controls">
+            <select id="restriction">
+                <option value="all">全員</option>
+                <option value="kakaricho">係長以上</option>
+                <option value="kichou">機長・班長以上</option>
+            </select>
+            <input type="text" id="message-input" placeholder="メッセージを入力">
+            <button id="send-btn">送信</button>
+        </div>
+
+        <div id="admin-panel" style="display:none;">
+            <h3>課長（管理者）メニュー</h3>
+            <label>名前編集:</label>
+            <select id="edit-user"></select>
+            <input type="text" id="new-name" placeholder="新しい名前">
+            <button id="update-name-btn">名前を更新</button>
+
+            <label>パスワード編集:</label>
+            <input type="text" id="new-pass" placeholder="新しいパスワード">
+            <button id="update-pass-btn">パスワード更新</button>
+        </div>
     </div>
 
-    <div id="messages" class="messages"></div>
-
-    <div style="margin-top:8px">
-      <textarea id="msg-text" placeholder="メッセージを入力" rows="3"></textarea>
-      <input id="file-input" type="file" accept=".pdf,image/*" />
-      <div style="display:flex;gap:8px;margin-top:6px">
-        <button id="send-btn">送信</button>
-        <button id="clear-btn" class="link-btn">メッセージ全消去</button>
-        <button id="my-pass-btn" class="link-btn" style="display:none">自分のパスワード変更</button>
-      </div>
-    </div>
-  </section>
-
-  <!-- 右：ユーザー一覧 / 管理者 -->
-  <aside id="right" class="card">
-    <h3>ユーザー一覧</h3>
-    <div id="user-list" class="muted"></div>
-    <hr />
-    <div id="admin-panel" style="display:none">
-      <h3>管理者メニュー</h3>
-      <div style="margin-bottom:8px">
-        <input id="new-name" placeholder="氏名" />
-        <select id="new-role">
-          <option value="general">一般</option>
-          <option value="kicho">機長班長</option>
-          <option value="kacho">係長</option>
-          <option value="admin">管理者</option>
-        </select>
-        <input id="new-pass" placeholder="初期パスワード(任意、未入力は1234)" />
-        <button id="add-user-btn">ユーザー追加</button>
-      </div>
-
-      <div style="max-height:260px;overflow:auto">
-        <table class="admin-table">
-          <thead><tr><th>名前</th><th>職制</th><th>パスワード</th><th>操作</th></tr></thead>
-          <tbody id="admin-user-table"></tbody>
-        </table>
-      </div>
-    </div>
-  </aside>
-</main>
-
-<script>
-/* ====== データ定義 & 初期化 ====== */
-const LS_USERS = 'chat_users_v4';
-const LS_MSGS  = 'chat_msgs_v4';
-const LS_CAL   = 'chat_cal_v4';
-
-// 初期ユーザー（ご指定構成） — 全員パスワード '1234'
-const defaultUsers = [
-  {id:'u_admin', name:'山田利至', role:'admin', password:'1234'},
-  {id:'u_kicho', name:'小林茂光', role:'kicho', password:'1234'},
-  {id:'u_kacho', name:'安藤正樹', role:'kacho', password:'1234'},
-  {id:'u_general', name:'倉田健太', role:'general', password:'1234'}
-];
-
-// 初期カレンダー
-const defaultCal = [{id:'ev1', title:'対策書作成', until:'2025-08-30'}];
-
-// 役職ランク（数値が大きいほど上位）
-const roleRank = { admin:4, kacho:3, kicho:2, bancho:2, general:1 };
-
-// 初期化（localStorageに無ければ投入）
-function init(){
-  if(!localStorage.getItem(LS_USERS)) localStorage.setItem(LS_USERS, JSON.stringify(defaultUsers));
-  if(!localStorage.getItem(LS_MSGS))  localStorage.setItem(LS_MSGS, JSON.stringify([]));
-  if(!localStorage.getItem(LS_CAL))   localStorage.setItem(LS_CAL, JSON.stringify(defaultCal));
-}
-init();
-
-/* ====== 状態変数 ====== */
-let users = JSON.parse(localStorage.getItem(LS_USERS));
-let messages = JSON.parse(localStorage.getItem(LS_MSGS));
-let calendar = JSON.parse(localStorage.getItem(LS_CAL));
-let currentUser = null;
-
-/* ====== DOM 参照 ====== */
-const roleSelect = document.getElementById('role-select');
-const nameSelect = document.getElementById('name-select');
-const loginPass = document.getElementById('login-pass');
-const loginBtn = document.getElementById('login-btn');
-const logoutBtn = document.getElementById('logout-btn');
-const loggedInfo = document.getElementById('logged-info');
-const messagesDiv = document.getElementById('messages');
-const targetSelect = document.getElementById('target-select');
-const msgText = document.getElementById('msg-text');
-const sendBtn = document.getElementById('send-btn');
-const fileInput = document.getElementById('file-input');
-const userListDiv = document.getElementById('user-list');
-const adminPanel = document.getElementById('admin-panel');
-const adminUserTable = document.getElementById('admin-user-table');
-const addUserBtn = document.getElementById('add-user-btn');
-const newName = document.getElementById('new-name');
-const newRole = document.getElementById('new-role');
-const newPass = document.getElementById('new-pass');
-const calendarList = document.getElementById('calendar-list');
-const calAdmin = document.getElementById('cal-admin');
-const calAdd = document.getElementById('cal-add');
-const calTitle = document.getElementById('cal-title');
-const calUntil = document.getElementById('cal-until');
-const logoutWrap = document.getElementById('logout-wrap');
-const myPassBtn = document.getElementById('my-pass-btn');
-const clearBtn = document.getElementById('clear-btn');
-
-/* ====== ヘルパー関数 ====== */
-function saveUsers(){ localStorage.setItem(LS_USERS, JSON.stringify(users)); }
-function saveMsgs(){ localStorage.setItem(LS_MSGS, JSON.stringify(messages)); }
-function saveCal(){ localStorage.setItem(LS_CAL, JSON.stringify(calendar)); }
-function roleLabel(key){
-  if(key==='admin') return '管理者';
-  if(key==='kacho') return '係長';
-  if(key==='kicho' || key==='bancho') return '機長班長';
-  return '一般';
-}
-function targetRankFromValue(val){
-  if(val==='general') return 1;
-  if(val==='kicho') return 2;
-  if(val==='kacho') return 3;
-  return 1;
-}
-
-/* ====== UI 初期描画 ====== */
-function refreshRoleOptions(){
-  roleSelect.innerHTML = '<option value="">-- 選択 --</option>';
-  const labels = {admin:'管理者', kacho:'係長', kicho:'機長班長', general:'一般'};
-  const seen = new Set();
-  ['admin','kacho','kicho','general'].forEach(k=>{
-    if(!seen.has(k)){ seen.add(k); const opt = document.createElement('option'); opt.value = k; opt.textContent = labels[k]; roleSelect.appendChild(opt); }
-  });
-}
-function refreshNameOptionsForRole(roleKey){
-  nameSelect.innerHTML = '';
-  const filtered = users.filter(u=>u.role === roleKey);
-  if(filtered.length===0){ const opt = document.createElement('option'); opt.textContent = '該当ユーザーがいません'; nameSelect.appendChild(opt); nameSelect.disabled=true; return; }
-  filtered.forEach(u=>{ const opt=document.createElement('option'); opt.value=u.id; opt.textContent=u.name; nameSelect.appendChild(opt); });
-  nameSelect.disabled=false;
-}
-function renderUserList(){ userListDiv.innerHTML=''; users.forEach(u=>{ const p=document.createElement('p'); p.textContent = `${u.name}（${roleLabel(u.role)}）`; userListDiv.appendChild(p); }); }
-function renderCalendar(){ calendar = JSON.parse(localStorage.getItem(LS_CAL)||'[]'); calendarList.innerHTML=''; calendar.forEach(ev=>{ const li=document.createElement('li'); li.textContent = ev.title + ' 〜 ' + ev.until; calendarList.appendChild(li); }); }
-function renderAdminTable(){
-  adminUserTable.innerHTML=''; users.forEach((u,idx)=>{
-    const tr = document.createElement('tr');
-    const nameTd = document.createElement('td'); nameTd.textContent = u.name;
-    const roleTd = document.createElement('td');
-    const roleSel = document.createElement('select');
-    [['admin','管理者'],['kacho','係長'],['kicho','機長班長'],['general','一般']].forEach(([val,label])=>{
-      const o=document.createElement('option'); o.value=val; o.textContent=label; if(u.role===val) o.selected=true; roleSel.appendChild(o);
-    });
-    roleSel.onchange = ()=>{ users[idx].role = roleSel.value; saveUsers(); refreshUI(); };
-    roleTd.appendChild(roleSel);
-
-    const passTd = document.createElement('td');
-    const passIn = document.createElement('input'); passIn.type='text'; passIn.value=u.password;
-    passIn.onchange = ()=>{ users[idx].password = passIn.value; saveUsers(); refreshUI(); };
-    passTd.appendChild(passIn);
-
-    const opTd = document.createElement('td');
-    const delBtn = document.createElement('button'); delBtn.textContent='削除'; delBtn.className='link-btn';
-    delBtn.onclick = ()=>{ if(confirm('削除しますか？')){ users.splice(idx,1); saveUsers(); refreshUI(); } };
-    opTd.appendChild(delBtn);
-
-    tr.appendChild(nameTd); tr.appendChild(roleTd); tr.appendChild(passTd); tr.appendChild(opTd);
-    adminUserTable.appendChild(tr);
-  });
-}
-
-/* ====== 初期 setup ====== */
-function refreshUI(){
-  users = JSON.parse(localStorage.getItem(LS_USERS)||'[]');
-  messages = JSON.parse(localStorage.getItem(LS_MSGS)||'[]');
-  calendar = JSON.parse(localStorage.getItem(LS_CAL)||'[]');
-  refreshRoleOptions();
-  renderUserList();
-  renderCalendar();
-  if(currentUser){
-    document.getElementById('logged-info').textContent = currentUser.name + '（' + roleLabel(currentUser.role) + '）';
-    if(currentUser.role==='admin'){ adminPanel.style.display='block'; calAdmin.style.display='block'; renderAdminTable(); } else { adminPanel.style.display='none'; calAdmin.style.display='none'; }
-    logoutWrap.style.display = 'block';
-    myPassBtn.style.display = 'inline-block';
-  } else {
-    document.getElementById('logged-info').textContent = '未ログイン';
-    adminPanel.style.display='none'; calAdmin.style.display='none'; logoutWrap.style.display='none'; myPassBtn.style.display='none';
-  }
-  renderMessages();
-}
-refreshUI();
-
-/* ====== ログイン処理（職制→氏名二段階） ====== */
-roleSelect.addEventListener('change', ()=>{
-  const r = roleSelect.value;
-  if(!r){ nameSelect.innerHTML='<option>職制を選んでください</option>'; nameSelect.disabled=true; return; }
-  refreshNameOptionsForRole(r);
-});
-
-loginBtn.addEventListener('click', ()=>{
-  const uid = nameSelect.value;
-  const pw = loginPass.value;
-  if(!uid){ alert('氏名を選択してください'); return; }
-  const u = users.find(x=>x.id===uid);
-  if(!u){ alert('ユーザーが見つかりません'); return; }
-  if(u.password !== pw){ alert('パスワードが違います'); return; }
-  currentUser = u;
-  // set UI
-  document.getElementById('logged-info').textContent = currentUser.name + '（' + roleLabel(currentUser.role) + '）';
-  document.getElementById('left').style.display = 'none';
-  document.getElementById('center').style.display = 'block';
-  document.getElementById('right').style.display = 'block';
-  logoutWrap.style.display = 'block';
-  if(currentUser.role === 'admin'){ adminPanel.style.display='block'; calAdmin.style.display='block'; renderAdminTable(); }
-  else { adminPanel.style.display='none'; calAdmin.style.display='none'; }
-  myPassBtn.style.display = 'inline-block';
-  renderMessages();
-});
-
-/* ====== ログアウト ====== */
-logoutBtn.addEventListener('click', ()=>{
-  currentUser = null;
-  document.getElementById('left').style.display='block';
-  document.getElementById('center').style.display='block';
-  document.getElementById('right').style.display='block';
-  loginPass.value=''; nameSelect.innerHTML=''; roleSelect.value='';
-  refreshUI();
-});
-
-/* ====== メッセージ送信 / 表示 / 既読 ====== */
-function canUserSendTo(targetVal){
-  if(!currentUser) return false;
-  const userRank = roleRank[currentUser.role] || 1;
-  const trgRank = targetRankFromValue(targetVal);
-  return userRank >= trgRank;
-}
-sendBtn.addEventListener('click', async ()=>{
-  if(!currentUser){ alert('ログインしてください'); return; }
-  const text = msgText.value.trim();
-  const targetVal = targetSelect.value;
-  if(!text && !(fileInput.files && fileInput.files.length>0)){ alert('メッセージか添付を入力してください'); return; }
-  if(!canUserSendTo(targetVal)){ alert('この配信先には送信できません'); return; }
-  let fileObj = null;
-  if(fileInput.files && fileInput.files[0]){
-    const f = fileInput.files[0];
-    if(f.size > 10*1024*1024){ alert('ファイルは10MB以下にしてください'); return; }
-    fileObj = await new Promise(res=>{
-      const fr = new FileReader(); fr.onload = ()=> res({name:f.name,data:fr.result,type:f.type}); fr.readAsDataURL(f);
-    });
-  }
-  const msgs = JSON.parse(localStorage.getItem(LS_MSGS) || '[]');
-  const id = 'm' + Date.now();
-  const m = { id, senderId: currentUser.id, senderName: currentUser.name, senderRole: currentUser.role, target: targetVal, text, time: new Date().toISOString(), file: fileObj, readBy: [] };
-  msgs.push(m); localStorage.setItem(LS_MSGS, JSON.stringify(msgs)); msgText.value=''; fileInput.value=''; messages = msgs;
-  renderMessages();
-});
-
-function renderMessages(){
-  messages = JSON.parse(localStorage.getItem(LS_MSGS) || '[]');
-  messagesDiv.innerHTML = '';
-  if(!currentUser) return;
-  const userRank = roleRank[currentUser.role] || 1;
-  messages.forEach(m=>{
-    const trgRank = targetRankFromValue(m.target);
-    if(userRank < trgRank) return; // 見れない
-    const div = document.createElement('div'); div.className='msg';
-    const meta = document.createElement('div'); meta.className='meta';
-    const badge = document.createElement('span'); badge.className='badge ' + (m.senderRole==='admin'?'admin':(m.target==='kacho'?'kacho':(m.target==='kicho'?'kicho':'general')));
-    badge.textContent = roleLabel(m.senderRole);
-    meta.appendChild(badge);
-    const leftText = document.createElement('span'); leftText.style.marginLeft='8px';
-    leftText.innerHTML = `<strong>${m.senderName}</strong>　${new Date(m.time).toLocaleString()}`;
-    meta.appendChild(leftText);
-
-    const rightActions = document.createElement('div');
-    rightActions.className='right-actions';
-    const readInfo = document.createElement('span'); readInfo.className='small'; readInfo.textContent = '既読：' + ((m.readBy && m.readBy.length) || 0) + '人';
-    rightActions.appendChild(readInfo);
-    if(currentUser && currentUser.role === 'admin'){
-      const rb = document.createElement('button'); rb.className='link-btn'; rb.textContent='既読者表示';
-      rb.onclick = ()=>{ const names=(m.readBy||[]).map(id=>{ const u=users.find(x=>x.id===id); return u?u.name:id; }); alert('既読者:\n' + (names.length?names.join('\n'):'なし')); };
-      rightActions.appendChild(rb);
-    }
-    meta.appendChild(rightActions);
-    div.appendChild(meta);
-
-    if(m.text) { const t = document.createElement('div'); t.textContent = m.text; div.appendChild(t); }
-    if(m.file){
-      const a = document.createElement('a'); a.href = m.file.data; a.download = m.file.name; a.className='file-link';
-      a.textContent = '📎 ' + m.file.name + '（ダウンロード）';
-      div.appendChild(a);
-    }
-    messagesDiv.appendChild(div);
-    // mark read
-    markRead(m.id);
-  });
-  messagesDiv.scrollTop = messagesDiv.scrollHeight;
-}
-
-function markRead(msgId){
-  if(!currentUser) return;
-  const msgs = JSON.parse(localStorage.getItem(LS_MSGS) || '[]');
-  const m = msgs.find(x=>x.id===msgId);
-  if(!m) return;
-  if(!m.readBy) m.readBy=[];
-  if(!m.readBy.includes(currentUser.id)){
-    m.readBy.push(currentUser.id);
-    localStorage.setItem(LS_MSGS, JSON.stringify(msgs));
-  }
-}
-
-/* ====== パスワード（管理者は他人編集、自分は自分で変更） ====== */
-myPassBtn.addEventListener('click', ()=>{
-  if(!currentUser) return alert('ログインしてください');
-  const np = prompt('新しいパスワードを入力してください（数字のみでも可）:');
-  if(!np) return;
-  const idx = users.findIndex(u=>u.id===currentUser.id);
-  if(idx>=0){ users[idx].password = np; saveUsers(); alert('パスワードを変更しました'); refreshUI(); }
-});
-
-/* ====== 管理者：ユーザー追加/編集/削除 ====== */
-addUserBtn.addEventListener('click', ()=>{
-  if(!currentUser || currentUser.role !== 'admin') return alert('管理者権限が必要です');
-  const name = newName.value.trim(); const role = newRole.value; let pass = newPass.value.trim();
-  if(!name) { alert('氏名を入力してください'); return; }
-  if(!pass) pass = '1234'; // default initial password
-  const id = 'u' + Date.now();
-  users.push({id,name,role,password:pass});
-  saveUsers(); newName.value=''; newPass.value=''; refreshUI();
-});
-
-/* ====== 管理者 UI の編集操作（renderAdminTable の inputs で保存済み） ====== */
-/* renderAdminTable already binds onchange handlers to update users and saveUsers */
-
-/* ====== カレンダー追加（管理者） ====== */
-calAdd.addEventListener('click', ()=>{
-  if(!currentUser || currentUser.role!=='admin') return alert('管理者のみ追加可能');
-  const t = calTitle.value.trim(); const u = calUntil.value.trim();
-  if(!t || !u) return alert('タイトルと期限を入力してください');
-  calendar.push({id:'ev'+Date.now(), title:t, until:u});
-  saveCal(); calTitle.value=''; calUntil.value=''; renderCalendar();
-});
-
-/* ====== メッセージ全消去（確認あり） ====== */
-clearBtn.addEventListener('click', ()=>{
-  if(!confirm('ローカルに保存された全メッセージを消去しますか？')) return;
-  localStorage.setItem(LS_MSGS, JSON.stringify([])); messages = []; renderMessages();
-});
-
-/* ====== 初期UI状態調整 ====== */
-(function prepareInitialUI(){
-  // show left panel, center/right exist but content updates on login
-  refreshUI();
-})();
-
-</script>
+    <script src="script.js"></script>
 </body>
 </html>
