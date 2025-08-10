@@ -1,128 +1,126 @@
-// ==== ユーザーデータ（サンプル）====
+// ユーザーデータ
 let users = [
-  { name: '山田利至', role: 'admin', password: '1234' },
-  { name: '倉田健太', role: 'kicho', password: '1234' },
-  { name: '安藤正樹', role: 'kacho', password: '1234' },
-  { name: '小林茂光', role: 'bancho', password: '1234' },
-  { name: '佐藤花子', role: 'general', password: '1234' },
-  { name: '高橋次郎', role: 'general', password: '1234' }
+    { name: "課長", role: "admin", password: "1234" },
+    { name: "係長A", role: "kakaricho", password: "1234" },
+    { name: "機長B", role: "kicho", password: "1234" },
+    { name: "班長C", role: "hancho", password: "1234" },
+    { name: "一般D", role: "ippan", password: "1234" }
 ];
 
-// ==== メッセージデータ ====
-let messages = [];
-
-// ==== 現在のログインユーザー ====
+// ログイン中ユーザー
 let currentUser = null;
 
-// ==== 職制ラベル ====
-function roleLabel(role) {
-  if (role === 'admin') return '管理者';
-  if (role === 'kacho') return '係長';
-  if (role === 'kicho') return '機長';
-  if (role === 'bancho') return '班長';
-  return '一般';
+// メッセージ履歴
+let messages = [];
+
+// ロールの優先度
+const rolePriority = {
+    "admin": 4,     // 課長
+    "kakaricho": 3, // 係長
+    "kicho": 2,     // 機長
+    "hancho": 2,    // 班長
+    "ippan": 1      // 一般
+};
+
+// ログイン処理
+function login() {
+    const username = document.getElementById("username").value.trim();
+    const password = document.getElementById("password").value.trim();
+
+    const user = users.find(u => u.name === username && u.password === password);
+
+    if (user) {
+        currentUser = user;
+        document.getElementById("login-container").style.display = "none";
+        document.getElementById("chat-container").style.display = "block";
+
+        document.getElementById("user-role").innerText = 
+            user.role === "admin" ? "課長" : user.name;
+        
+        updateUserList();
+        updateMessageList();
+    } else {
+        alert("名前またはパスワードが違います。");
+    }
 }
 
-// ==== 職制ランク（高いほど権限大） ====
-function roleRank(r) {
-  if (r === 'admin') return 4;
-  if (r === 'kacho') return 3;
-  if (r === 'kicho' || r === 'bancho') return 2;
-  return 1;
+// メッセージ送信
+function sendMessage() {
+    const text = document.getElementById("message").value.trim();
+    const limitRole = document.getElementById("role-limit").value;
+
+    if (!text) return;
+
+    const newMessage = {
+        sender: currentUser.name,
+        role: currentUser.role,
+        text: text,
+        limitRole: limitRole || null,
+        time: new Date().toLocaleString()
+    };
+
+    messages.push(newMessage);
+    document.getElementById("message").value = "";
+
+    updateMessageList();
 }
 
-// ==== ターゲットランク ====
-function targetRank(t) {
-  if (t === 'general') return 1;
-  if (t === 'kicho' || t === 'bancho') return 2;
-  if (t === 'kacho') return 3;
-  if (t === 'admin') return 4;
-  return 1;
-}
+// メッセージ表示更新
+function updateMessageList() {
+    const messageList = document.getElementById("message-list");
+    messageList.innerHTML = "";
 
-// ==== 表示可否 ====
-function canViewMessage(m) {
-  if (!currentUser) return false;
-  const userRank = roleRank(currentUser.role);
-  const trgRank = targetRank(m.target);
-  return userRank >= trgRank;
-}
-
-// ==== 送信可否 ====
-function canSendTo(targetRole) {
-  if (!currentUser) return false;
-  const userRank = roleRank(currentUser.role);
-  const trgRank = targetRank(targetRole);
-  return userRank >= trgRank;
-}
-
-// ==== ログイン処理 ====
-function login(name, password) {
-  const user = users.find(u => u.name === name && u.password === password);
-  if (user) {
-    currentUser = user;
-    renderChat();
-    return true;
-  }
-  return false;
-}
-
-// ==== メッセージ送信 ====
-function sendMessage(text, target) {
-  if (!canSendTo(target)) {
-    alert('この職制には送信できません');
-    return;
-  }
-  messages.push({
-    sender: currentUser.name,
-    senderRole: currentUser.role,
-    text: text,
-    target: target,
-    time: new Date()
-  });
-  renderChat();
-}
-
-// ==== チャット表示 ====
-function renderChat() {
-  const chatBox = document.getElementById('chat');
-  chatBox.innerHTML = '';
-  messages
-    .filter(m => canViewMessage(m))
-    .forEach(m => {
-      const div = document.createElement('div');
-      div.textContent = `[${roleLabel(m.senderRole)}] ${m.sender}: ${m.text} (${m.time.toLocaleString()})`;
-      chatBox.appendChild(div);
+    messages.forEach(msg => {
+        if (!msg.limitRole || rolePriority[currentUser.role] >= rolePriority[msg.limitRole]) {
+            const div = document.createElement("div");
+            div.innerHTML = `<strong>${msg.sender}</strong> (${msg.time}): ${msg.text}`;
+            messageList.appendChild(div);
+        }
     });
 }
 
-// ==== 管理者メニュー ====
-function renderAdminMenu() {
-  if (currentUser && currentUser.role === 'admin') {
-    const adminBox = document.getElementById('admin');
-    adminBox.innerHTML = '<h3>管理者メニュー</h3>';
+// ユーザー一覧更新
+function updateUserList() {
+    const list = document.getElementById("user-list");
+    list.innerHTML = "";
+
     users.forEach(u => {
-      const p = document.createElement('p');
-      p.textContent = `${u.name} (${roleLabel(u.role)}) / パスワード: ${u.password}`;
-      adminBox.appendChild(p);
+        const li = document.createElement("li");
+        li.textContent = `${u.name} (${u.role === "admin" ? "課長" : u.role})`;
+        list.appendChild(li);
     });
-  }
 }
 
-// ==== 初期化 ====
-document.getElementById('loginBtn').onclick = () => {
-  const name = document.getElementById('name').value;
-  const pass = document.getElementById('pass').value;
-  if (login(name, pass)) {
-    renderAdminMenu();
-  } else {
-    alert('ログイン失敗');
-  }
-};
+// パスワード変更（課長のみ）
+function changePassword(targetName, newPass) {
+    if (currentUser.role !== "admin") {
+        alert("パスワード変更は課長のみ可能です。");
+        return;
+    }
+    const user = users.find(u => u.name === targetName);
+    if (user) {
+        user.password = newPass;
+        alert(`${user.name} のパスワードを変更しました`);
+    }
+}
 
-document.getElementById('sendBtn').onclick = () => {
-  const text = document.getElementById('message').value;
-  const target = document.getElementById('target').value;
-  sendMessage(text, target);
-  document.getElementById('message').value = '';
-};
+// 名前変更（課長のみ）
+function changeName(oldName, newName) {
+    if (currentUser.role !== "admin") {
+        alert("名前変更は課長のみ可能です。");
+        return;
+    }
+    const user = users.find(u => u.name === oldName);
+    if (user) {
+        user.name = newName;
+        alert(`名前を ${newName} に変更しました`);
+        updateUserList();
+    }
+}
+
+// ログアウト
+function logout() {
+    currentUser = null;
+    document.getElementById("chat-container").style.display = "none";
+    document.getElementById("login-container").style.display = "block";
+}
