@@ -1,56 +1,215 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>職制チャット</title>
-    <link rel="stylesheet" href="styles.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>職制チャット</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0; padding: 0;
+        background: #f2f2f2;
+    }
+    header {
+        background: #4CAF50;
+        color: white;
+        padding: 10px;
+        text-align: center;
+    }
+    #login-container, #chat-container {
+        padding: 15px;
+    }
+    input, select, button {
+        margin: 5px 0;
+        padding: 8px;
+        width: 100%;
+    }
+    #message-list {
+        background: white;
+        padding: 10px;
+        min-height: 200px;
+        max-height: 300px;
+        overflow-y: auto;
+        border: 1px solid #ccc;
+        margin-bottom: 10px;
+    }
+    #user-list {
+        background: white;
+        padding: 10px;
+        border: 1px solid #ccc;
+        margin-top: 10px;
+    }
+</style>
 </head>
 <body>
-    <div id="login-container">
-        <h2>ログイン</h2>
-        <label>名前:</label>
-        <select id="username"></select>
 
-        <label>パスワード:</label>
-        <input type="password" id="password" placeholder="数字のみOK">
+<header>
+    <h1>職制チャット</h1>
+</header>
 
-        <button id="login-btn">ログイン</button>
-    </div>
+<div id="login-container">
+    <h2>ログイン</h2>
+    <input type="text" id="username" placeholder="名前を入力">
+    <input type="password" id="password" placeholder="パスワードを入力">
+    <button onclick="login()">ログイン</button>
+</div>
 
-    <div id="chat-container" style="display:none;">
-        <div id="top-bar">
-            <span id="user-info"></span>
-            <button id="logout-btn">ログアウト</button>
-        </div>
+<div id="chat-container" style="display:none;">
+    <p>ログイン中: <span id="user-role"></span> <button onclick="logout()">ログアウト</button></p>
 
-        <div id="message-list"></div>
+    <div id="message-list"></div>
 
-        <div id="announcement"></div>
+    <textarea id="message" placeholder="メッセージを入力"></textarea>
+    <label>閲覧制限:</label>
+    <select id="role-limit">
+        <option value="">制限なし</option>
+        <option value="kakaricho">係長以上</option>
+        <option value="kicho">機長・班長以上</option>
+        <option value="admin">課長のみ</option>
+    </select>
+    <button onclick="sendMessage()">送信</button>
 
-        <div id="message-controls">
-            <select id="restriction">
-                <option value="all">全員</option>
-                <option value="kakaricho">係長以上</option>
-                <option value="kichou">機長・班長以上</option>
-            </select>
-            <input type="text" id="message-input" placeholder="メッセージを入力">
-            <button id="send-btn">送信</button>
-        </div>
+    <h3>ユーザー一覧</h3>
+    <ul id="user-list"></ul>
 
-        <div id="admin-panel" style="display:none;">
-            <h3>課長（管理者）メニュー</h3>
-            <label>名前編集:</label>
-            <select id="edit-user"></select>
-            <input type="text" id="new-name" placeholder="新しい名前">
-            <button id="update-name-btn">名前を更新</button>
+    <h3>課長専用編集</h3>
+    <input type="text" id="edit-name-old" placeholder="変更前の名前">
+    <input type="text" id="edit-name-new" placeholder="変更後の名前">
+    <button onclick="changeName(document.getElementById('edit-name-old').value, document.getElementById('edit-name-new').value)">名前変更</button>
 
-            <label>パスワード編集:</label>
-            <input type="text" id="new-pass" placeholder="新しいパスワード">
-            <button id="update-pass-btn">パスワード更新</button>
-        </div>
-    </div>
+    <input type="text" id="edit-pass-name" placeholder="パスワード変更対象名">
+    <input type="text" id="edit-pass-new" placeholder="新パスワード">
+    <button onclick="changePassword(document.getElementById('edit-pass-name').value, document.getElementById('edit-pass-new').value)">パスワード変更</button>
+</div>
 
-    <script src="script.js"></script>
+<script>
+// ユーザーデータ
+let users = [
+    { name: "課長", role: "admin", password: "1234" },
+    { name: "係長A", role: "kakaricho", password: "1234" },
+    { name: "機長B", role: "kicho", password: "1234" },
+    { name: "班長C", role: "hancho", password: "1234" },
+    { name: "一般D", role: "ippan", password: "1234" }
+];
+
+// ログイン中ユーザー
+let currentUser = null;
+
+// メッセージ履歴
+let messages = [];
+
+// ロールの優先度
+const rolePriority = {
+    "admin": 4,     // 課長
+    "kakaricho": 3, // 係長
+    "kicho": 2,     // 機長
+    "hancho": 2,    // 班長
+    "ippan": 1      // 一般
+};
+
+// ログイン処理
+function login() {
+    const username = document.getElementById("username").value.trim();
+    const password = document.getElementById("password").value.trim();
+
+    const user = users.find(u => u.name === username && u.password === password);
+
+    if (user) {
+        currentUser = user;
+        document.getElementById("login-container").style.display = "none";
+        document.getElementById("chat-container").style.display = "block";
+
+        document.getElementById("user-role").innerText = 
+            user.role === "admin" ? "課長" : user.name;
+        
+        updateUserList();
+        updateMessageList();
+    } else {
+        alert("名前またはパスワードが違います。");
+    }
+}
+
+// メッセージ送信
+function sendMessage() {
+    const text = document.getElementById("message").value.trim();
+    const limitRole = document.getElementById("role-limit").value;
+
+    if (!text) return;
+
+    const newMessage = {
+        sender: currentUser.name,
+        role: currentUser.role,
+        text: text,
+        limitRole: limitRole || null,
+        time: new Date().toLocaleString()
+    };
+
+    messages.push(newMessage);
+    document.getElementById("message").value = "";
+
+    updateMessageList();
+}
+
+// メッセージ表示更新
+function updateMessageList() {
+    const messageList = document.getElementById("message-list");
+    messageList.innerHTML = "";
+
+    messages.forEach(msg => {
+        if (!msg.limitRole || rolePriority[currentUser.role] >= rolePriority[msg.limitRole]) {
+            const div = document.createElement("div");
+            div.innerHTML = `<strong>${msg.sender}</strong> (${msg.time}): ${msg.text}`;
+            messageList.appendChild(div);
+        }
+    });
+}
+
+// ユーザー一覧更新
+function updateUserList() {
+    const list = document.getElementById("user-list");
+    list.innerHTML = "";
+
+    users.forEach(u => {
+        const li = document.createElement("li");
+        li.textContent = `${u.name} (${u.role === "admin" ? "課長" : u.role})`;
+        list.appendChild(li);
+    });
+}
+
+// パスワード変更（課長のみ）
+function changePassword(targetName, newPass) {
+    if (currentUser.role !== "admin") {
+        alert("パスワード変更は課長のみ可能です。");
+        return;
+    }
+    const user = users.find(u => u.name === targetName);
+    if (user) {
+        user.password = newPass;
+        alert(`${user.name} のパスワードを変更しました`);
+    }
+}
+
+// 名前変更（課長のみ）
+function changeName(oldName, newName) {
+    if (currentUser.role !== "admin") {
+        alert("名前変更は課長のみ可能です。");
+        return;
+    }
+    const user = users.find(u => u.name === oldName);
+    if (user) {
+        user.name = newName;
+        alert(`名前を ${newName} に変更しました`);
+        updateUserList();
+    }
+}
+
+// ログアウト
+function logout() {
+    currentUser = null;
+    document.getElementById("chat-container").style.display = "none";
+    document.getElementById("login-container").style.display = "block";
+}
+</script>
+
 </body>
 </html>
