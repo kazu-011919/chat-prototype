@@ -1,12 +1,23 @@
 body {
-    font-family: sans-serif;
-    max-width: 600px;
-    margin: auto;
-    padding: 20px;
+    font-family: Arial, sans-serif;
+    background-color: #f5f5f5;
+    margin: 0;
+    padding: 0;
 }
 
-h1 {
+#login-container, #chat-container {
+    width: 90%;
+    max-width: 500px;
+    margin: 40px auto;
+    padding: 20px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+h2, h3 {
     text-align: center;
+    margin-bottom: 20px;
 }
 
 label {
@@ -14,32 +25,60 @@ label {
     margin-top: 10px;
 }
 
-select, input {
+input, select, button {
     width: 100%;
     padding: 8px;
     margin-top: 5px;
+    box-sizing: border-box;
 }
 
-button {
-    margin-top: 10px;
-    padding: 10px;
-    width: 100%;
-}
-
-#chat-area {
+#message-list {
     border: 1px solid #ccc;
+    background: #fafafa;
     height: 300px;
     overflow-y: scroll;
     padding: 10px;
-    margin-top: 10px;
+    margin-bottom: 10px;
 }
 
-#message-area {
+#message-list div {
+    margin-bottom: 10px;
+}
+
+#announcement {
+    background-color: #ffefc2;
+    padding: 8px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    font-weight: bold;
+}
+
+#message-controls {
     display: flex;
     gap: 5px;
-    margin-top: 10px;
 }
 
-#message-area input {
+#message-controls select {
+    width: 35%;
+}
+
+#message-controls input {
     flex: 1;
+}
+
+#message-controls button {
+    width: 20%;
+}
+
+#top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+#admin-panel {
+    margin-top: 20px;
+    border-top: 2px solid #ccc;
+    padding-top: 10px;
 }
